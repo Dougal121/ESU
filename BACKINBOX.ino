@@ -127,19 +127,7 @@ int eeAddress ;
     esuc.ADC_Cal_Extra = constrain(esuc.ADC_Cal_Extra,0,10000) ;                //
 
 
-     
-/*    efertAddress = eeAddress ;
-    EEPROM.get(eeAddress,efert);
-    eeAddress += sizeof(efert) ;
-    EEPROM.get(eeAddress,efilter);
-    eeAddress += sizeof(efilter) ;
-    EEPROM.get(eeAddress,eboard);
-    eeAddress += sizeof(eboard) ;
-    EEPROM.get(eeAddress,elocal);
-    eeAddress += sizeof(elocal) ;
-    EEPROM.get(eeAddress,pn);
-    eeAddress += sizeof(pn) ;
-*/    
+   
     Serial.println("Final EEPROM load adress " +String(eeAddress));   
     
   }else{
@@ -153,17 +141,7 @@ int eeAddress ;
     eeAddress += sizeof(esuc) ;
     EEPROM.put(eeAddress,esul);
     eeAddress += sizeof(esul) ;    
-/*    EEPROM.put(eeAddress,efert);
-    eeAddress += sizeof(efert) ;
-    EEPROM.put(eeAddress,efilter);
-    eeAddress += sizeof(efilter) ;
-    EEPROM.put(eeAddress,eboard);
-    eeAddress += sizeof(eboard) ;
-    EEPROM.put(eeAddress,elocal);
-    eeAddress += sizeof(elocal) ;
-    EEPROM.put(eeAddress,pn);
-    eeAddress += sizeof(pn) ;
- */   
+ 
     Serial.println("Final EEPROM Save adress " +String(eeAddress));   
 
     EEPROM.commit();                                                       // save changes in one go ???
