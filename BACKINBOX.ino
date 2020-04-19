@@ -4,6 +4,7 @@ void BackInTheBoxMemory(){
   sprintf(ghks.nssid,"************\0");  // put your default credentials in here if you wish
   sprintf(ghks.npassword,"********\0");  // put your default credentials in here if you wish
 
+
   sprintf(ghks.cpassword,"\0");
   
   sprintf(ghks.NodeName,"ESU SCADA\0") ;
@@ -77,7 +78,16 @@ void BackInTheBoxMemory(){
     esul[i].Current = 0 ;
     esul[i].AmpHours = 0 ;
   }
-  
+  for ( i = 0 ; i < 48 ; i++){   // turn off all slots 
+    if (( i >= 38 ) && ( i < 46 )){
+      esuc.ActiveTimes[i] = true ;       
+    }else{
+      esuc.ActiveTimes[i] = false ; 
+    }
+  }  
+  for ( i = 0 ; i < 1440 ; i++ ) {
+    fVD[i] = 0 ;
+  }  
 }
 
 
@@ -127,7 +137,19 @@ int eeAddress ;
     esuc.ADC_Cal_Extra = constrain(esuc.ADC_Cal_Extra,0,10000) ;                //
 
 
-   
+     
+/*    efertAddress = eeAddress ;
+    EEPROM.get(eeAddress,efert);
+    eeAddress += sizeof(efert) ;
+    EEPROM.get(eeAddress,efilter);
+    eeAddress += sizeof(efilter) ;
+    EEPROM.get(eeAddress,eboard);
+    eeAddress += sizeof(eboard) ;
+    EEPROM.get(eeAddress,elocal);
+    eeAddress += sizeof(elocal) ;
+    EEPROM.get(eeAddress,pn);
+    eeAddress += sizeof(pn) ;
+*/    
     Serial.println("Final EEPROM load adress " +String(eeAddress));   
     
   }else{
@@ -141,7 +163,17 @@ int eeAddress ;
     eeAddress += sizeof(esuc) ;
     EEPROM.put(eeAddress,esul);
     eeAddress += sizeof(esul) ;    
- 
+/*    EEPROM.put(eeAddress,efert);
+    eeAddress += sizeof(efert) ;
+    EEPROM.put(eeAddress,efilter);
+    eeAddress += sizeof(efilter) ;
+    EEPROM.put(eeAddress,eboard);
+    eeAddress += sizeof(eboard) ;
+    EEPROM.put(eeAddress,elocal);
+    eeAddress += sizeof(elocal) ;
+    EEPROM.put(eeAddress,pn);
+    eeAddress += sizeof(pn) ;
+ */   
     Serial.println("Final EEPROM Save adress " +String(eeAddress));   
 
     EEPROM.commit();                                                       // save changes in one go ???
