@@ -7,7 +7,11 @@ unsigned long processNTPpacket(void){
     unsigned long secsSince1900 = highWord << 16 | lowWord;                             // this is NTP time (seconds since Jan 1 1900):
     const unsigned long seventyYears = 2208988800UL;                                    // now convert NTP time into everyday time:     Unix time starts on Jan 1 1970. In seconds, that's 2208988800:   
     unsigned long epoch = secsSince1900 - seventyYears + long(SECS_PER_HOUR * ghks.fTimeZone );   // subtract seventy years:
-    setTime((time_t)epoch);                                                             // update the clock
+    if ((year(epoch) > 2019 ) && (year(epoch) < 2050 )){
+      setTime((time_t)epoch);                                                             // update the clock
+    }else{
+      Serial.println(F("*** Time NOT set to RTC year out of range ***"));  
+    }
     Serial.print(F("Unix time = "));
     Serial.println(epoch);                                                              // print Unix time:
 }

@@ -17,6 +17,8 @@ void SerialOutParams() {
 }
 
 void SendHTTPHeader() {
+  String message ;
+
   server.sendHeader(F("Server"), F("ESP8266-on-ice"), false);
   server.sendHeader(F("X-Powered-by"), F("Dougal-1.0"), false);
   server.setContentLength(CONTENT_LENGTH_UNKNOWN);
@@ -25,7 +27,12 @@ void SendHTTPHeader() {
   server.sendContent("<head><title>ESU - SCADA " + String(Toleo) + "</title>");
   server.sendContent(F("<meta name=viewport content='width=320, auto inital-scale=1'>"));
   server.sendContent(F("</head><body><html><center><h3>"));
-  server.sendContent("<a title='click for home / refresh' href='/'>" + String(ghks.NodeName) + "</a></h3>");
+  if ( esui.bOnOffState ){
+    message = "<font color='green'><b> - ON</b></font>" ;
+  }else{
+    message = "<font color='red'><b> - OFF</b></font>" ;    
+  }
+  server.sendContent("<a title='click for home / refresh' href='/'>" + String(ghks.NodeName) + "</a> Battery " + String(((current_ADC[0]*esuc.ADC_Cal_Voltage/4096)+esuc.ADC_Cal_Ofs_Voltage) ,2)+" (V) " + message + "</h3>");
 }
 
 
@@ -36,7 +43,7 @@ void SendHTTPPageFooter() {
   //  server.sendContent(F("<a href='/?command=668'>Save Fert Current QTY</a><br>"));
   server.sendContent(F("<a href='/eeprom'>EEPROM Memory Contents</a><br>"));
   server.sendContent(F("<a href='/setup'>Node Setup</a><br>"));
-  server.sendContent(F("<a href='/logs'>Data Logs</a><br>"));
+  server.sendContent(F("<a href='/logs'>Data Logs Page 1</a> . <a href='/log2'>Data Logs Page 2</a><br>"));
   server.sendContent(F("<a href='/info'>Node Infomation</a><br>"));  
   server.sendContent(F("<a href='/vsss'>view volatile memory structures</a><br>"));
   if ((MyIP[0] == 0) && (MyIP[1] == 0) && (MyIP[2] == 0) && (MyIP[3] == 0)) {
@@ -722,7 +729,7 @@ void handleRoot() {
     server.sendContent(F("</select></td><td>.</td></tr>")) ;
     server.sendContent("<tr><td>After Sunset On Timer</td><td align=center><input type='text' name='as' value='" + String(esuc.iOnTimeSunset) + "'></td><td>(min)</td></tr>" ) ;
     server.sendContent("<tr><td>Before Sunrise On Timer</td><td align=center><input type='text' name='bs' value='" + String(esuc.iOnTimeSunrise) + "'></td><td>(min)</td></form></tr>" ) ;
-
+    server.sendContent("<tr><td>Computer Uptime</td><td align=center>"+String(lMinUpTime/60) + ":" + String(lMinUpTime%60) + "</td><td>(hr:min)</td></tr>" ) ;
 
     server.sendContent("</table><br>Physical Setup<table border=1 title='Calibration'><form method=post action='" + server.uri() + "'>") ;
     server.sendContent("<tr><th>Parameter</th><th align=center>Multiplier</th><th align=center>Offset</td><td><input type='submit' value='SET'></td></tr>" ) ;

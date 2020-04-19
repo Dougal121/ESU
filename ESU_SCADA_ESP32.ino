@@ -168,12 +168,12 @@ long  MyTestSum ;
 long lTimePrev ;
 long lTimePrev2 ;
 long lLogIndex ; // which sample we is current one
+long under_volt_ctr = 0 ;
 uint64_t chipid; 
-
+long lMinUpTime = 0 ;
 long lsst = 0 ;
 long lsrt = 0 ; 
-
-  
+float fVD[1440] ;   // volatge data once per minute
 WiFiUDP ntpudp;
 
 WebServer server(80);
@@ -183,7 +183,7 @@ WebServer server(80);
 
 void setup() {
 int i , k , j = 0; 
-
+  lMinUpTime = 0 ;
   esui.iOffTime = 0 ;  
   esui.iOnTime = 0 ;  
   esui.bOnOffState = false ;
@@ -343,6 +343,7 @@ int i , k , j = 0;
   server.on("/stime", handleRoot);
   server.on("/info", handleInfo);
   server.on("/logs", datalog_page);
+  server.on("/log2", datalog2_page);
   server.on("/eeprom", DisplayEEPROM);
   server.on("/backup", HTTP_GET , handleBackup);
   server.on("/backup.txt", HTTP_GET , handleBackup);
@@ -534,17 +535,22 @@ float fVoltage ;
     display.drawString(0 , 44, String(esui.iOnTime));
     display.setTextAlignment(TEXT_ALIGN_RIGHT);
     display.drawString(127 , 44, String(esui.iOffTime));
+    display.setTextAlignment(TEXT_ALIGN_CENTER);
+    display.drawString(63 , 44, String(lMinUpTime/60) + ":" + String(lMinUpTime%60));
     display.display();
 
     digitalWrite(2,!digitalRead(2));  // Built In LED
 
     fVoltage = ((current_ADC[0]*esuc.ADC_Cal_Voltage/4096)+esuc.ADC_Cal_Ofs_Voltage) ;
     if ( fVoltage < esuc.MinVoltage ) {   // low voltage switch off and hold off
-//      esui.bOnOffState = false ;      
-      esui.bVoltageEnable = false ;
+      under_volt_ctr ++ ;      
+      if (under_volt_ctr > 60) {          // need 60 seconds below set voltage
+        esui.bVoltageEnable = false ;
+      }
+    }else{
+      under_volt_ctr = 0 ;
     }
     if ( fVoltage > esuc.ResetVoltage ) {   // low voltage switch off and hold off
-//      esui.bOnOffState = false ;      
       esui.bVoltageEnable = true ;
     }
     if ( !esui.bVoltageEnable ){
@@ -627,7 +633,10 @@ float fVoltage ;
   if (rtc_hour != hour()){
     bSendCtrlPacket = true ;
     if ( !bConfig ) { // ie we have a network
-      sendNTPpacket(ghks.timeServer); // send an NTP packet to a time server  once and hour
+      if ( hour() == 12 ){
+        sendNTPpacket(ghks.timeServer); // send an NTP packet to a time server  once and hour
+        bDoTimeUpdate = false ;
+      }
     }else{
       if ( hasRTC ){
         DS3231_get(&tc);
@@ -637,6 +646,8 @@ float fVoltage ;
     rtc_hour = hour();
   }
   if ( rtc_min != minute()){
+    lMinUpTime++ ; 
+    fVD[(hour()*60)+minute()] = fVoltage ;
     if (( year() < 1980 )|| (bDoTimeUpdate)) {  // not the correct time try to fix every minute
       if ( !bConfig ) { // ie we have a network
         sendNTPpacket(ghks.timeServer); // send an NTP packet to a time server  
