@@ -28,11 +28,11 @@ void SendHTTPHeader() {
   server.sendContent(F("<meta name=viewport content='width=320, auto inital-scale=1'>"));
   server.sendContent(F("</head><body><html><center><h3>"));
   if ( esui.bOnOffState ){
-    message = "<font color='green'><b> - ON</b></font>" ;
+    message = "<font color='green'><b>" ;
   }else{
-    message = "<font color='red'><b> - OFF</b></font>" ;    
+    message = "<font color='red'><b>" ;    
   }
-  server.sendContent("<a title='click for home / refresh' href='/'>" + String(ghks.NodeName) + "</a> Battery " + String(((current_ADC[0]*esuc.ADC_Cal_Voltage/4096)+esuc.ADC_Cal_Ofs_Voltage) ,2)+" (V) " + message + "</h3>");
+  server.sendContent("<a title='click for home / refresh' href='/'>" + String(ghks.NodeName) + "</a> " + message + " Battery " +  String(((current_ADC[0]*esuc.ADC_Cal_Voltage/4096)+esuc.ADC_Cal_Ofs_Voltage) ,2)+" (V)</b></font></h3>");
 }
 
 
@@ -454,8 +454,8 @@ void handleRoot() {
   } else {
     server.sendContent("<b>" + String(buff) + " UTC " + String(ghks.fTimeZone, 1) ) ;
   }
-  if ( year() < 2019 ) {
-    server.sendContent(F("  --- CLOCK NOT SET ---")) ;
+  if ( year() < 2020 ) {
+    server.sendContent(F("<font color=red><b>  --- CLOCK NOT SET ---</b></font>")) ;
   }
   server.sendContent(F("</b><br>")) ;
   if ( ghks.AutoOff_t > now() )  {
@@ -464,10 +464,10 @@ void handleRoot() {
     server.sendContent(String(buff)) ;
     server.sendContent(F("</font></b><br>")) ;
   } else {
-    if ( year() > 2000 ) {
+    if (( now() > ghks.AutoOff_t) &&(  year() > 2019 )) {
       server.sendContent(F("<b><font color=green>Automation ONLINE</font></b><br>")) ;
     } else {
-      server.sendContent(F("<b><font color=green>Automation OFFLINE Invalid time</font></b><br>")) ;
+      server.sendContent(F("<b><font color=red>Automation OFFLINE Invalid time</font></b><br>")) ;
     }
   }
 

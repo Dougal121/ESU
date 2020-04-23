@@ -1,9 +1,12 @@
 void BackInTheBoxMemory(){
-  uint8_t i , j ;
+  int i , j ;
 
   sprintf(ghks.nssid,"************\0");  // put your default credentials in here if you wish
   sprintf(ghks.npassword,"********\0");  // put your default credentials in here if you wish
 
+
+  sprintf(ghks.nssid,"WLAN-PLUMMER\0");    // dougals office
+  sprintf(ghks.npassword,"cheegh5S\0");
 
   sprintf(ghks.cpassword,"\0");
   
@@ -44,7 +47,7 @@ void BackInTheBoxMemory(){
 
   esuc.MinVoltage = 48.5 ;
   esuc.ResetVoltage = 53.5 ;
-  esuc.iICtoInverter = 20 ;
+  esuc.iICtoInverter = 5 ;
   esuc.ExtraVoltage = 49.3 ;
   esuc.bMasterEnable = true ;
   esuc.bSolarEnable = false ;
