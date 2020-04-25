@@ -345,8 +345,10 @@ void setup() {
   server.on("/scan", i2cScan);
   server.on("/stime", handleRoot);
   server.on("/info", handleInfo);
-  server.on("/logs", datalog_page);
+  server.on("/log1", datalog1_page);
   server.on("/log2", datalog2_page);
+  server.on("/chart1", chart1_page);
+  server.on("/chart2", chart2_page);
   server.on("/eeprom", DisplayEEPROM);
   server.on("/backup", HTTP_GET , handleBackup);
   server.on("/backup.txt", HTTP_GET , handleBackup);
@@ -545,7 +547,8 @@ void loop() {
     display.setTextAlignment(TEXT_ALIGN_RIGHT);
     display.drawString(127 , 44, String(esui.iOffTime));
     display.setTextAlignment(TEXT_ALIGN_CENTER);
-    display.drawString(63 , 44, String(lMinUpTime / 60) + ":" + String(lMinUpTime % 60));
+    snprintf(buff, BUFF_MAX, "%d:%02d:%02d",(lMinUpTime/1440),((lMinUpTime/60)%24),(lMinUpTime%60));    
+    display.drawString(63 , 44, String(buff));
     display.display();
 
     fVoltage = ((current_ADC[0] * esuc.ADC_Cal_Voltage / 4096) + esuc.ADC_Cal_Ofs_Voltage) ;

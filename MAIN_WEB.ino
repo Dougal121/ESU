@@ -43,7 +43,8 @@ void SendHTTPPageFooter() {
   //  server.sendContent(F("<a href='/?command=668'>Save Fert Current QTY</a><br>"));
   server.sendContent(F("<a href='/eeprom'>EEPROM Memory Contents</a><br>"));
   server.sendContent(F("<a href='/setup'>Node Setup</a><br>"));
-  server.sendContent(F("<a href='/logs'>Data Logs Page 1</a> . <a href='/log2'>Data Logs Page 2</a><br>"));
+  server.sendContent(F("<a href='/log1'>Data Logs Page 1</a> . <a href='/log2'>Data Logs Page 2</a><br>"));
+  server.sendContent(F("<a href='/chart1'>Chart 1</a> . <a href='/chart2'>Chart 2</a><br>"));
   server.sendContent(F("<a href='/info'>Node Infomation</a><br>"));  
   server.sendContent(F("<a href='/vsss'>view volatile memory structures</a><br>"));
   if ((MyIP[0] == 0) && (MyIP[1] == 0) && (MyIP[2] == 0) && (MyIP[3] == 0)) {
@@ -591,7 +592,7 @@ void handleRoot() {
   }
 
 
-  if (String(server.uri()).indexOf("vsss") > 0) { // volitile status - all structures status
+  if (String(server.uri()).indexOf("vsss") > 0) { // ############################  volitile status - all structures status  ###############################
     bDefault = false ;
     server.sendContent(F("<br><b>Internal Variables</b><br>"));
     server.sendContent(F("<table border=1 title='Internal Memory Values'>"));
@@ -729,7 +730,8 @@ void handleRoot() {
     server.sendContent(F("</select></td><td>.</td></tr>")) ;
     server.sendContent("<tr><td>After Sunset On Timer</td><td align=center><input type='text' name='as' value='" + String(esuc.iOnTimeSunset) + "'></td><td>(min)</td></tr>" ) ;
     server.sendContent("<tr><td>Before Sunrise On Timer</td><td align=center><input type='text' name='bs' value='" + String(esuc.iOnTimeSunrise) + "'></td><td>(min)</td></form></tr>" ) ;
-    server.sendContent("<tr><td>Computer Uptime</td><td align=center>"+String(lMinUpTime/60) + ":" + String(lMinUpTime%60) + "</td><td>(hr:min)</td></tr>" ) ;
+    snprintf(buff, BUFF_MAX, "%d:%02d:%02d",(lMinUpTime/1440),((lMinUpTime/60)%24),(lMinUpTime%60));
+    server.sendContent("<tr><td>Computer Uptime</td><td align=center>"+String(buff)+"</td><td>(day:hr:min)</td></tr>" ) ;
 
     server.sendContent("</table><br>Physical Setup<table border=1 title='Calibration'><form method=post action='" + server.uri() + "'>") ;
     server.sendContent("<tr><th>Parameter</th><th align=center>Multiplier</th><th align=center>Offset</td><td><input type='submit' value='SET'></td></tr>" ) ;
