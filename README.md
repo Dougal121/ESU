@@ -7,3 +7,6 @@ WeMos (LoLin) D1 R32 ESP32 based SCADA for co-ordinating Inverter and charging s
 19/04/2020  Second working cut - ESU working with some issues<br>
 23/04/2020  Fixes and some charting using google charts<br>
 25/04/2020  Weekly update of controler. Saturdays special Google Graphs without manky bits<br>
+26/04/2020  Fixed the UDP no DNS issue which causes reboots in NTP code (core problem)<br>
+            Also fixed the lack of re-connection but  I think I can do better this is a rude hack!<br>
+            
