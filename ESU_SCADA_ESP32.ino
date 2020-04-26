@@ -15,12 +15,8 @@
 #include <WebServer.h>
 #include <ESPmDNS.h>
 #include <WiFiUDP.h>
-//#include <ESP32HTTPUpdateServer.h>
-//#include <ESP32httpUpdate.h>
-//#include <DNSServer.h>
 #include <TimeLib.h>
 #include <Wire.h>
-//#include <SPI.h>
 #include <EEPROM.h>
 #include <stdio.h>
 #include "SSD1306.h"
@@ -159,7 +155,8 @@ bool hasRTC = false ;
 long lRebootCode = 0 ;
 uint8_t rtc_status ;
 struct ts tc;
-
+time_t tGoodTime ;   // try and remember the time if you root ;
+unsigned long lTimeNext = 0 ;     // next network retry
 int bSaveReq = 0 ;
 int iUploadPos = 0 ;
 bool bDoTimeUpdate = true ;
@@ -174,6 +171,7 @@ long lMinUpTime = 0 ;
 long lsst = 0 ;
 long lsrt = 0 ;
 float fVD[1440] ;   // volatge data once per minute
+bool bPrevConnectionStatus = false;
 WiFiUDP ntpudp;
 
 WebServer server(80);
@@ -390,13 +388,17 @@ void setup() {
 
   server.onNotFound(handleNotFound);
   server.begin();
-
+  if ( year(now()) < 2020 ){
+    if( year(tGoodTime) > 2019 ){
+      setTime(tGoodTime) ;  // try and recuse a reasonable time stamp from memory just in case the NTP or network fails
+    }
+  }
   tc.mon = 0 ;
   tc.wday = 0 ;
   DS3231_init(DS3231_INTCN); // look for a rtc
   DS3231_get(&tc);
   rtc_status = DS3231_get_sreg();
-  if (((tc.mon < 1 ) || (tc.mon > 12 )) && (tc.wday > 8)) { // no rtc to load off
+  if (((tc.mon < 1 ) || (tc.mon > 12 )) && ((tc.wday > 8)||(tc.wday < 1))) { // no rtc to load off
     Serial.println("NO RTC ?");
   } else {
     setTime((int)tc.hour, (int)tc.min, (int)tc.sec, (int)tc.mday, (int)tc.mon, (int)tc.year ) ; // set the internal RTC
@@ -467,7 +469,7 @@ void loop() {
 
   server.handleClient();
   //  OTAWebServer.handleClient();
-
+  
   lTime = millis() ;
   if (esui.bOnOffState && (lTime > lTimePrev2)) {
     digitalWrite(2, !digitalRead(2)); // Built In LED
@@ -476,6 +478,9 @@ void loop() {
   lScanCtr++ ;
   bSendCtrlPacket = false ;
   if ( rtc_sec != second()) {
+    if( year(now()) > 2019 ){
+      tGoodTime = now();    // update this if it looks remotely right
+    }
     digitalWrite(2, !digitalRead(2)); // Built In LED
     lTimePrev2 = millis()+251;        // flashes extra one above
     switch (rtc_sec % 4) {
@@ -719,8 +724,34 @@ void loop() {
 
   //  digitalWrite(SCOPE_PIN,!digitalRead(SCOPE_PIN));  // my scope says we are doing this loop at an unreasonable speed except when we do web stuff
 
-
-}
+  snprintf(buff, BUFF_MAX, "%d/%02d/%02d %02d:%02d:%02d", year(), month(), day() , hour(), minute(), second());
+  if ( !bPrevConnectionStatus && WiFi.isConnected() ){
+      Serial.println(String(buff )+ " WiFi Reconnected OK...");  
+  }
+  if (!WiFi.isConnected())  {
+    bPrevConnectionStatus = false;
+/*    if ( abs((unsigned long)millis()-(unsigned long)lTimeNext)>32000){
+      lTimeNext = millis() - 1 ;
+    }*/
+    if ( lTimeNext < millis() ){
+      Serial.println(String(buff )+ " Trying to reconnect WiFi ");
+      WiFi.disconnect(false);
+//      Serial.println("Connecting to WiFi...");
+      WiFi.mode(WIFI_AP_STA);
+      if ( ghks.lNetworkOptions != 0 ) {            // use ixed IP
+        WiFi.config(ghks.IPStatic, ghks.IPGateway, ghks.IPMask, ghks.IPDNS );
+      }
+      if ( ghks.npassword[0] == 0 ) {
+        WiFi.begin((char*)ghks.nssid);                    // connect to unencrypted access point
+      } else {
+        WiFi.begin((char*)ghks.nssid, (char*)ghks.npassword);  // connect to access point with encryption
+      }
+      lTimeNext = millis() + 30000 ;
+    }
+  }else{
+    bPrevConnectionStatus = true ;
+  }  
+}   // ##################### BOTOM OF MAIN LOOP ###########################################
 
 boolean reconnect()
 {
