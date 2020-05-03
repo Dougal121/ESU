@@ -75,7 +75,7 @@ void chart1_page(){
   prev_time = esul[ii].RecTime ;
   for ( i = 0 ; i < MAX_LOG ; i++ ) {
     j = (i + ii ) % MAX_LOG ;
-    snprintf(buff, BUFF_MAX, "new Date(\'%4d-%02d-%2dT%02d:%02d:%02d\')", year(esul[j].RecTime), month(esul[j].RecTime), day(esul[j].RecTime) , hour(esul[j].RecTime), minute(esul[j].RecTime), second(esul[j].RecTime));    
+    snprintf(buff, BUFF_MAX, "new Date(\'%4d-%02d-%02dT%02d:%02d:%02d\')", year(esul[j].RecTime), month(esul[j].RecTime), day(esul[j].RecTime) , hour(esul[j].RecTime), minute(esul[j].RecTime), second(esul[j].RecTime));    
     if (( !isnan(esul[j].Voltage)) && (esul[j].RecTime>=prev_time)){
       server.sendContent("[ " + String(buff) + "," + String(esul[j].Voltage) + "," + String(esul[j].Current) + "," + String(esul[j].AmpHours) + " ] ,\r\n" ) ; 
       prev_time = esul[j].RecTime ;
@@ -118,7 +118,7 @@ void chart2_page(){
   ii = (((hour()*60)+minute()))+ 1 ;
   MyTime = now()-second() - (1440*60) ;                                   // 24hrs ago to the minute
   for ( i = 0 ; i < 1440 ; i++ ) {
-    snprintf(buff, BUFF_MAX, "new Date(\'%4d-%02d-%2dT%02d:%02d:%02d\')", year(MyTime), month(MyTime), day(MyTime) , hour(MyTime), minute(MyTime), second(MyTime));    
+    snprintf(buff, BUFF_MAX, "new Date(\'%4d-%02d-%02dT%02d:%02d:%02d\')", year(MyTime), month(MyTime), day(MyTime) , hour(MyTime), minute(MyTime), second(MyTime));    
     if ( !isnan(fVD[(i+ii)%1440]) ){
       server.sendContent("[ " + String(buff) + " , " + String(fVD[(i+ii)%1440]) + " ] ,\r\n" ) ; 
 //      server.sendContent("[ " + String(i) + " , " + String(fVD[(i+ii)%1440]) + " ] ,\r\n" ) ; 
