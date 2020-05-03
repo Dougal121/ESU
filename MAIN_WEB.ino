@@ -19,8 +19,8 @@ void SerialOutParams() {
 void SendHTTPHeader() {
   String message ;
 
-  server.sendHeader(F("Server"), F("ESP8266-on-ice"), false);
-  server.sendHeader(F("X-Powered-by"), F("Dougal-1.0"), false);
+  server.sendHeader(F("Server"), F("ESP32-tinfoil-hats"), false);
+  server.sendHeader(F("X-Powered-by"), F("Dougal-filament-7"), false);
   server.setContentLength(CONTENT_LENGTH_UNKNOWN);
   server.send(200, "text/html", "");
   server.sendContent(F("<!DOCTYPE HTML>"));
@@ -52,7 +52,7 @@ void SendHTTPPageFooter() {
   } else {
     snprintf(buff, BUFF_MAX, "%u.%u.%u.%u", MyIP[0], MyIP[1], MyIP[2], MyIP[3]);
   }
-  server.sendContent("<a href='http://" + String(buff) + "/serverIndex'>OTA Firmware Update</a><br>");
+  server.sendContent("<a href='http://" + String(buff) + "/update'>OTA Firmware Update</a><br>");
   server.sendContent("<a href='https://github.com/Dougal121/ESU'>Source at GitHub</a><br>");
   server.sendContent("<a href='http://" + String(buff) + "/backup'>Backup / Restore Settings</a><br>");
   server.sendContent(F("</body></html>\r\n"));
@@ -60,7 +60,7 @@ void SendHTTPPageFooter() {
 
 
 void handleNotFound() {
-  String message = F("Seriously - No way DUDE\n\n");
+  String message = F("Seriously - No way DUDE !!!\n\n");
   message += F("URI: ");
   message += server.uri();
   message += F("\nMethod: ");
@@ -127,7 +127,9 @@ void handleRoot() {
           BackInTheBoxMemory();
           break;
         case 665:
-          sendNTPpacket(ghks.timeServer); // send an NTP packet to a time server  once and hour
+          bManSet = true  ;
+          bDoTimeUpdate = false ;          
+//          sendNTPpacket(ghks.timeServer); // send an NTP packet to a time server  once and hour
           break;
         case 668:
           break;
@@ -919,6 +921,7 @@ void handleRoot() {
   }
 
   SendHTTPPageFooter();
-
 }
+
+
 

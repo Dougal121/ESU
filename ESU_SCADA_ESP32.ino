@@ -24,6 +24,8 @@
 #include "SH1106Wire.h"
 #include "ds3231.h"
 #include <Update.h>
+#include <SPI.h>
+#include <SD.h>
 
 #include "StaticPages.h"
 
@@ -152,6 +154,7 @@ long lScanCtr = 0 ;
 long lScanLast = 0 ;
 bool bConfig = false ;
 bool hasRTC = false ;
+bool hasSD = false;
 long lRebootCode = 0 ;
 uint8_t rtc_status ;
 struct ts tc;
@@ -172,6 +175,7 @@ long lsst = 0 ;
 long lsrt = 0 ;
 float fVD[1440] ;   // volatge data once per minute
 bool bPrevConnectionStatus = false;
+bool bManSet = true ;
 WiFiUDP ntpudp;
 
 WebServer server(80);
@@ -351,6 +355,7 @@ void setup() {
   server.on("/backup", HTTP_GET , handleBackup);
   server.on("/backup.txt", HTTP_GET , handleBackup);
   server.on("/backup.txt", HTTP_POST,  handleRoot, handleFileUpload);
+  server.on("/list", HTTP_GET, indexSDCard);
 
   server.on("/login", HTTP_GET, []() {
     server.sendHeader("Connection", "close");
@@ -409,43 +414,13 @@ void setup() {
   rtc_min = minute();
   rtc_sec = second();
 
-  /*
-    OTAWebServer.on("/", HTTP_GET, []() {
-      OTAWebServer.sendHeader("Connection", "close");
-      OTAWebServer.send(200, "text/html", loginIndex);
-      Serial.printf("Display Login Page");
-    });
-    OTAWebServer.on("/serverIndex", HTTP_GET, []() {
-      OTAWebServer.sendHeader("Connection", "close");
-      OTAWebServer.send(200, "text/html", serverIndex);
-    });
-    OTAWebServer.on("/update", HTTP_POST, []() {   //handling uploading firmware file
-      OTAWebServer.sendHeader("Connection", "close");
-      OTAWebServer.send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
-      ESP.restart();
-    }, []() {
-      HTTPUpload& upload = OTAWebServer.upload();
-      if (upload.status == UPLOAD_FILE_START) {
-        Serial.printf("Update: %s\n", upload.filename.c_str());
-        if (!Update.begin(UPDATE_SIZE_UNKNOWN)) { //start with max available size
-          Update.printError(Serial);
-        }
-      } else if (upload.status == UPLOAD_FILE_WRITE) {
-
-        if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {   // flashing firmware to ESP
-          Update.printError(Serial);
-        }
-      } else if (upload.status == UPLOAD_FILE_END) {
-        if (Update.end(true)) { //true to set the size to the current progress
-          Serial.printf("Update Success: %u\nRebooting...\n", upload.totalSize);
-        } else {
-          Update.printError(Serial);
-        }
-      }
-    });
-    OTAWebServer.begin();
-  */
-
+  if (SD.begin(SS)) {
+    Serial.println("SD Card initialized.");
+    hasSD = true;
+  }else{
+    Serial.println("SD Card failed on startup.");
+    hasSD = false;
+  }
   randomSeed(now());                       // now we prolly have a good time setting use this to roll the dice for reboot code
   lRebootCode = random(1, +2147483640) ;
 }
@@ -466,7 +441,8 @@ void loop() {
   bool bDirty2 = false ;
   long lcct ;
   float fVoltage ;
-
+  long lTD ;
+  
   server.handleClient();
   //  OTAWebServer.handleClient();
   
@@ -666,10 +642,8 @@ void loop() {
     lMinUpTime++ ;
     fVD[(hour() * 60) + minute()] = fVoltage ;
     if ((bDoTimeUpdate)) {  // not the correct time try to fix every minute
-      if ( !bConfig ) { // ie we have a network
-        sendNTPpacket(ghks.timeServer); // send an NTP packet to a time server
-        bDoTimeUpdate = false ;
-      }
+      sendNTPpacket(ghks.timeServer); // send an NTP packet to a time server
+      bDoTimeUpdate = false ;
     }
     if ( hasRTC ) {
       rtc_temp = DS3231_get_treg();
@@ -729,10 +703,16 @@ void loop() {
       Serial.println(String(buff )+ " WiFi Reconnected OK...");  
   }
   if (!WiFi.isConnected())  {
-    bPrevConnectionStatus = false;
-/*    if ( abs((unsigned long)millis()-(unsigned long)lTimeNext)>32000){
+    lTD = (long)lTimeNext-(long) millis() ;
+    if (( abs(lTD)>40000)||(bPrevConnectionStatus)){ // trying to get roll over protection and a 30 second retry
       lTimeNext = millis() - 1 ;
-    }*/
+/*      Serial.print(millis());
+      Serial.print(" ");
+      Serial.print(lTimeNext);
+      Serial.print(" ");
+      Serial.println(abs(lTD));*/
+    }
+    bPrevConnectionStatus = false;
     if ( lTimeNext < millis() ){
       Serial.println(String(buff )+ " Trying to reconnect WiFi ");
       WiFi.disconnect(false);
@@ -753,36 +733,4 @@ void loop() {
   }  
 }   // ##################### BOTOM OF MAIN LOOP ###########################################
 
-boolean reconnect()
-{
-  if (!WiFi.isConnected())
-  {
-    Serial.print("Reconnecting WiFi ");
-    WiFi.disconnect(false);
-    Serial.println("Connecting to WiFi...");
-    WiFi.mode(WIFI_AP_STA);
-    if ( ghks.npassword[0] == 0 ) {
-      WiFi.begin((char*)ghks.nssid);                    // connect to unencrypted access point
-    } else {
-      WiFi.begin((char*)ghks.nssid, (char*)ghks.npassword);  // connect to access point with encryption
-    }
-    delayfor(250);
-    if ( WiFi.status() != WL_CONNECTED )
-    {
-      return false;
-    }
 
-    Serial.println("Connected");
-    return true;
-  }
-}
-
-void delayfor(long milliseconds)
-{
-  long d;
-  d = millis();
-
-  while (millis() - d < milliseconds) {
-    yield();
-  }
-}

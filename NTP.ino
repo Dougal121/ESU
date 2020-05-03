@@ -7,8 +7,11 @@ unsigned long processNTPpacket(void){
     unsigned long secsSince1900 = highWord << 16 | lowWord;                             // this is NTP time (seconds since Jan 1 1900):
     const unsigned long seventyYears = 2208988800UL;                                    // now convert NTP time into everyday time:     Unix time starts on Jan 1 1970. In seconds, that's 2208988800:   
     unsigned long epoch = secsSince1900 - seventyYears + long(SECS_PER_HOUR * ghks.fTimeZone );   // subtract seventy years:
-    if ((year(epoch) > 2019 ) && (year(epoch) < 2050 )){
+    unsigned long timediff = epoch - now();
+    timediff = abs(timediff) ;  // dont use if more than 30 min out
+    if (((year(epoch) > 2019 ) && ( timediff < 1800 )) || bManSet ){
       setTime((time_t)epoch);                                                             // update the clock
+      bManSet = false ;
     }else{
       Serial.println(F("*** Time NOT set to RTC year out of range ***"));  
     }
@@ -42,7 +45,7 @@ IPAddress ntpIP ;
 //    Serial.println(buff);
 
     if  (( ntpIP[0] == 0 ) &&  ( ntpIP[1] == 0 ) && ( ntpIP[2] == 0 ) && ( ntpIP[3] == 0 )){
-      Serial.println("No DNS - no point 0.0.0.0 ");      
+      Serial.println("No DNS - no point sending NTP to 0.0.0.0 ");      
     }else{
       ntpudp.beginPacket(buff, 123); //NTP requests are to port 123    103.38.121.36
       ntpudp.write(packetBuffer, NTP_PACKET_SIZE);
