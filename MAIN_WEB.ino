@@ -18,7 +18,8 @@ void SerialOutParams() {
 
 void SendHTTPHeader() {
   String message ;
-
+  String strOnOff ;
+  
   server.sendHeader(F("Server"), F("ESP32-tinfoil-hats"), false);
   server.sendHeader(F("X-Powered-by"), F("Dougal-filament-7"), false);
   server.setContentLength(CONTENT_LENGTH_UNKNOWN);
@@ -26,15 +27,20 @@ void SendHTTPHeader() {
   server.sendContent(F("<!DOCTYPE HTML>"));
   server.sendContent("<head><title>ESU - SCADA " + String(Toleo) + "</title>");
   server.sendContent(F("<meta name=viewport content='width=320, auto inital-scale=1'>"));
+  server.sendContent(F("<link rel='icon' type='image/png' href='download?file=/favorite.ico'>"));
   server.sendContent(F("</head><body><html><center><h3>"));
-  if ( esui.bOnOffState ){
-    message = "<font color='green'><b>" ;
+  if ( esui.bVoltageEnable ){
+    message = "<font color='green'>" ;
   }else{
-    message = "<font color='red'><b>" ;    
+    message = "<font color='red'>" ;    
   }
-  server.sendContent("<a title='click for home / refresh' href='/'>" + String(ghks.NodeName) + "</a> " + message + " Battery " +  String(((current_ADC[0]*esuc.ADC_Cal_Voltage/4096)+esuc.ADC_Cal_Ofs_Voltage) ,2)+" (V)</b></font></h3>");
+  if ( esui.bOnOffState ){
+    strOnOff = "<font color='green'> - ON </font>" ;
+  }else{
+    strOnOff = "<font color='red'> - OFF  </font>" ;    
+  }
+  server.sendContent("<a title='click for home / refresh' href='/'>" + String(ghks.NodeName) + "</a><b> " + message + " Battery " +  String(((current_ADC[0]*esuc.ADC_Cal_Voltage/4096)+esuc.ADC_Cal_Ofs_Voltage) ,2)+" (V)</font>"+strOnOff+"</b></h3>");
 }
-
 
 
 void SendHTTPPageFooter() {
@@ -45,9 +51,10 @@ void SendHTTPPageFooter() {
   server.sendContent(F("<a href='/setup'>Node Setup</a><br>"));
   server.sendContent(F("<a href='/log1'>Data Logs Page 1</a> . <a href='/log2'>Data Logs Page 2</a><br>"));
   server.sendContent(F("<a href='/chart1'>Chart 1</a> . <a href='/chart2'>Chart 2</a><br>"));
+  server.sendContent(F("<a href='/list'>SD card file list</a><br>"));
   server.sendContent(F("<a href='/info'>Node Infomation</a><br>"));  
   server.sendContent(F("<a href='/vsss'>view volatile memory structures</a><br>"));
-  if ((MyIP[0] == 0) && (MyIP[1] == 0) && (MyIP[2] == 0) && (MyIP[3] == 0)) {
+  if (!WiFi.isConnected()) {
     snprintf(buff, BUFF_MAX, "%u.%u.%u.%u", MyIPC[0], MyIPC[1], MyIPC[2], MyIPC[3]);
   } else {
     snprintf(buff, BUFF_MAX, "%u.%u.%u.%u", MyIP[0], MyIP[1], MyIP[2], MyIP[3]);
@@ -55,6 +62,9 @@ void SendHTTPPageFooter() {
   server.sendContent("<a href='http://" + String(buff) + "/update'>OTA Firmware Update</a><br>");
   server.sendContent("<a href='https://github.com/Dougal121/ESU'>Source at GitHub</a><br>");
   server.sendContent("<a href='http://" + String(buff) + "/backup'>Backup / Restore Settings</a><br>");
+  if (hasSD){
+    server.sendContent("<a href='http://" + String(buff) + "/list'>List log files on SD Card</a><br>");    
+  }
   server.sendContent(F("</body></html>\r\n"));
 }
 

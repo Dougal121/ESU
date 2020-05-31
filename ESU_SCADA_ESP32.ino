@@ -8,7 +8,7 @@
 
     The idea is to provide experience and a bridging step between grid connected and off grid systems.
 
-    Compiles for LOLIN32 @ 80Mhz
+    Compiles for LOLIN D32 @ 80Mhz
 */
 #include <WiFi.h>
 #include <WiFiClient.h>
@@ -26,6 +26,8 @@
 #include <Update.h>
 #include <SPI.h>
 #include <SD.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
 
 #include "StaticPages.h"
 
@@ -125,6 +127,7 @@ typedef struct __attribute__((__packed__)) {             // tempary record
   bool      bIncomer ;
   time_t    tOn ;
   time_t    tOff ;
+  float     fTemp[4] ;
 } internal_t ;
 
 internal_t          esui ;      // internal volitoile states
@@ -356,7 +359,9 @@ void setup() {
   server.on("/backup.txt", HTTP_GET , handleBackup);
   server.on("/backup.txt", HTTP_POST,  handleRoot, handleFileUpload);
   server.on("/list", HTTP_GET, indexSDCard);
-
+  server.on("/download", HTTP_GET, downloadFile);
+  server.on("/chartfile", HTTP_GET, chartFile);
+  
   server.on("/login", HTTP_GET, []() {
     server.sendHeader("Connection", "close");
     server.send(200, "text/html", loginIndex);
@@ -494,6 +499,10 @@ void loop() {
     }
     display.drawString(64 , 53 ,  String(buff) );
 
+    display.setColor(INVERSE);
+    if ((!esui.bVoltageEnable)&& (((rtc_sec % 2 ) == 1 ))){
+      display.fillRect(0, 11, 128, 11);
+    }
     display.setTextAlignment(TEXT_ALIGN_LEFT);
     display.drawString(0, 10 , String("DCV  " ) + String((current_ADC[0]*esuc.ADC_Cal_Voltage / 4096) + esuc.ADC_Cal_Ofs_Voltage));
     display.setTextAlignment(TEXT_ALIGN_CENTER);
@@ -508,17 +517,20 @@ void loop() {
           display.drawString(127 , 10+(10*i), String(current_ADC[0]));
         }
     */
-    display.setColor(INVERSE);
     if ( esui.bIncomer ) {
       display.setTextAlignment(TEXT_ALIGN_CENTER);
       //      display.drawRect(0,22,128,11);
-      display.fillRect(0, 22, 128, 11);
+      if (( under_volt_ctr > 45 ) && (((rtc_sec % 2 ) == 1 ))){
+        display.fillRect(0, 22, 128, 11);
+      }
       display.drawString(64 , 21, String("<<< INCOMER ON >>>"));
     }
     if ( esui.bInverter ) {
       display.setTextAlignment(TEXT_ALIGN_CENTER);
       //      display.drawRect(0,33,128,11);
-      display.fillRect(0, 34, 128, 11);
+      if (( under_volt_ctr > 20 ) && (((rtc_sec % 2 ) == 0 ))){
+        display.fillRect(0, 34, 128, 11);
+      }
       display.drawString(64 , 33, String("<<< INVERTER ON >>>"));
     }
     display.setColor(WHITE);
@@ -678,7 +690,8 @@ void loop() {
     } else {                                // night
       ghks.iDayNight = 0 ;
     }
-
+    if ( year() >= 2020 )  // don't data log if year/time is crap
+      DataLog("");  // data log to SD card if present ( collect a days worth at a time )
     rtc_min = minute() ;
   }
   if (second() > 4 ) {
@@ -700,7 +713,8 @@ void loop() {
 
   snprintf(buff, BUFF_MAX, "%d/%02d/%02d %02d:%02d:%02d", year(), month(), day() , hour(), minute(), second());
   if ( !bPrevConnectionStatus && WiFi.isConnected() ){
-      Serial.println(String(buff )+ " WiFi Reconnected OK...");  
+    Serial.println(String(buff )+ " WiFi Reconnected OK...");  
+    MyIP =  WiFi.localIP() ;
   }
   if (!WiFi.isConnected())  {
     lTD = (long)lTimeNext-(long) millis() ;
