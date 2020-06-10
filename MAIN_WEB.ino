@@ -616,6 +616,7 @@ void handleRoot() {
     server.sendContent("<tr><td>Incommer Output</td><td align=center>" + String(esui.bIncomer) + "</td></tr>" ) ;
     server.sendContent("<tr><td>On Time Register</td><td align=center>" + String(esui.tOn) + "</td></tr>" ) ;
     server.sendContent("<tr><td>Off Time Register</td><td align=center>" + String(esui.tOff) + "</td></tr>" ) ;
+    server.sendContent("<tr><td>Amp Hours</td><td align=center>" + String(esui.fAmpHours) + "</td></tr>" ) ;
     server.sendContent(F("</table>"));
   }
 
@@ -926,6 +927,14 @@ void handleRoot() {
     server.sendContent("<tr><td>Current In</td><td align=center>" + String(current_ADC[1]) + "</td><td align=center>"+String(esuc.ADC_Cal_CurrentIn)+"</td><td align=center>" + String((current_ADC[1]*esuc.ADC_Cal_CurrentIn/4096)+esuc.ADC_Cal_Ofs_CurrentIn) + "</td><td align=center>(A)</td></tr>" ) ;
     server.sendContent("<tr><td>Current Out</td><td align=center>" + String(current_ADC[2]) + "</td><td align=center>"+String(esuc.ADC_Cal_CurrentOut)+"</td><td align=center>" + String((current_ADC[2]*esuc.ADC_Cal_CurrentOut/4096)+esuc.ADC_Cal_Ofs_CurrentOut) + "</td><td align=center>(A)</td></tr>" ) ;
     server.sendContent("<tr><td>???</td><td align=center>" + String(current_ADC[3]) + "</td><td align=center>"+String(esuc.ADC_Cal_Extra)+"</td><td align=center>" + String((current_ADC[3]*esuc.ADC_Cal_Extra/4096)+esuc.ADC_Cal_Ofs_Extra) + "</td><td align=center>()</td></tr>" ) ;
+    sensors.requestTemperatures();  
+    server.sendContent(F("</table><br><table border=1 title='Temperatures'>"));
+    server.sendContent(F("<tr><th><b>Location</th><th align=center><b>Last Log Value</b></th><th align=center><b>Instant Value</b></th><th>Units</th></tr>")) ;
+    server.sendContent("<tr><td>Temp 1</td><td align=center>" + String(esui.fTemp[0]) + "</td><td align=center>" + String(sensors.getTempC(Thermometer[0])) + "</td><td align=center>(C)</td></tr>" ) ;
+    server.sendContent("<tr><td>Temp 2</td><td align=center>" + String(esui.fTemp[1]) + "</td><td align=center>" + String(sensors.getTempC(Thermometer[1])) + "</td><td align=center>(C)</td></tr>" ) ;
+    server.sendContent("<tr><td>Temp 3</td><td align=center>" + String(esui.fTemp[2]) + "</td><td align=center>" + String(sensors.getTempC(Thermometer[2])) + "</td><td align=center>(C)</td></tr>" ) ;
+    server.sendContent("<tr><td colspan=4>.</td></tr>" ) ;
+    server.sendContent("<tr><td>RSSI</td><td colspan=2 align=center>" + String(abs(WiFi.RSSI())) + "</td><td align=center>(dB)</td></tr>" ) ;
     server.sendContent(F("</table>"));
 
   }

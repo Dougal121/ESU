@@ -29,6 +29,15 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
+#define ONE_WIRE_BUS 26
+#define TEMPERATURE_PRECISION 12
+
+OneWire oneWire(ONE_WIRE_BUS);
+DallasTemperature sensors(&oneWire);  // Pass our oneWire reference to Dallas Temperature.
+
+DeviceAddress Thermometer[4];  // arrays to hold device addresses
+
+
 #include "StaticPages.h"
 
 #define BUFF_MAX 32
@@ -128,6 +137,7 @@ typedef struct __attribute__((__packed__)) {             // tempary record
   time_t    tOn ;
   time_t    tOff ;
   float     fTemp[4] ;
+  float     fAmpHours ; 
 } internal_t ;
 
 internal_t          esui ;      // internal volitoile states
@@ -428,6 +438,33 @@ void setup() {
   }
   randomSeed(now());                       // now we prolly have a good time setting use this to roll the dice for reboot code
   lRebootCode = random(1, +2147483640) ;
+  
+  sensors.begin(); // Start up the Dallas library
+
+  Serial.print("Parasite power is: ");// report parasite power requirements
+  if (sensors.isParasitePowerMode()) 
+    Serial.println("ON");
+  else 
+    Serial.println("OFF");
+
+  for (i = 0 ; i < 3 ; i++){
+    if (sensors.getAddress(Thermometer[i], i)) {
+        printAddress(Thermometer[i]);
+        sensors.setResolution(Thermometer[i], TEMPERATURE_PRECISION);
+        Serial.print(" Device "+String(i)+" Resolution: ");
+        Serial.print(sensors.getResolution(Thermometer[i]), DEC);
+        Serial.print(" ");
+        sensors.requestTemperatures();
+        printTemperature(Thermometer[i]);
+        Serial.println();
+    }
+    else
+      Serial.println("Unable to find address for Device "+String(i));
+  }  
+  Serial.print(sensors.getDeviceCount(), DEC);
+  Serial.println(" Temperature devices found.");
+
+  
 }
 
 
@@ -446,6 +483,7 @@ void loop() {
   bool bDirty2 = false ;
   long lcct ;
   float fVoltage ;
+  float fCurrent ;
   long lTD ;
   
   server.handleClient();
@@ -545,6 +583,7 @@ void loop() {
     display.display();
 
     fVoltage = ((current_ADC[0] * esuc.ADC_Cal_Voltage / 4096) + esuc.ADC_Cal_Ofs_Voltage) ;
+    fCurrent = ((current_ADC[1]*esuc.ADC_Cal_CurrentIn/4096)+esuc.ADC_Cal_Ofs_CurrentIn );
     if ( fVoltage < esuc.MinVoltage ) {   // low voltage switch off and hold off
       under_volt_ctr ++ ;
       if (under_volt_ctr > 60) {          // need 60 seconds below set voltage
@@ -625,12 +664,16 @@ void loop() {
     lScanLast = lScanCtr ;
     lScanCtr = 0 ;
 
+                                                              // have a crack at columb counting
+    esui.fAmpHours += fCurrent / 3600 ;                       // convert Amp second to Amp Hours
+    esui.fAmpHours = constrain(esui.fAmpHours,0,500);         // make sure it dont go crazy
+    
     if (((minute() % 15) == 0 ) &&  (second() == 0 )) { // data logging
       i = (hour() * 4) +  ( minute() / 15 ) ;
       esul[i].RecTime = now() ;
       esul[i].Voltage = fVoltage ;
-      esul[i].Current = 0 ;
-      esul[i].AmpHours = 0 ;
+      esul[i].Current = fCurrent ;
+      esul[i].AmpHours = esui.fAmpHours ;
     }
 
   }                         // #########   end of the once per second stuff  ################
@@ -651,6 +694,7 @@ void loop() {
     rtc_hour = hour();
   }
   if ( rtc_min != minute()) {
+    GetTempLogs(); // grab the data if there is any
     lMinUpTime++ ;
     fVD[(hour() * 60) + minute()] = fVoltage ;
     if ((bDoTimeUpdate)) {  // not the correct time try to fix every minute

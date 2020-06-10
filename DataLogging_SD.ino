@@ -25,7 +25,7 @@ bool bHeader = false ;
       dataFile.print(String(buff)+",");
       dataFile.print(String((current_ADC[0] * esuc.ADC_Cal_Voltage / 4096) + esuc.ADC_Cal_Ofs_Voltage)+",");
       dataFile.print(String((current_ADC[1] * esuc.ADC_Cal_CurrentIn / 4096) + esuc.ADC_Cal_Ofs_CurrentIn)+",");
-      dataFile.print(String((current_ADC[2] * esuc.ADC_Cal_CurrentOut / 4096) + esuc.ADC_Cal_Ofs_CurrentOut)+",");
+      dataFile.print(String(esui.fAmpHours)+",");
       dataFile.print(String((current_ADC[3] * esuc.ADC_Cal_Extra / 4096) + esuc.ADC_Cal_Ofs_Extra)+",");
       dataFile.println(String(esui.fTemp[0],2)+","+String(esui.fTemp[1],2)+","+String(esui.fTemp[2],2)+","+String(abs(WiFi.RSSI())));
       dataFile.close();
@@ -141,7 +141,7 @@ void chartFile()
     server.sendContent(F("google.charts.load('current', {'packages':['corechart']});\r\n"));  // Load the Visualization API and the piechart package.    
     server.sendContent(F("google.charts.setOnLoadCallback(drawChart);\r\n"));                 // Set a callback to run when the Google Visualization API is loaded.
     server.sendContent(F("function drawChart() {\r\n"));
-    server.sendContent(F("var data = google.visualization.arrayToDataTable([[{label: 'Time', type: 'datetime'},{label: 'Battery Volatage', type: 'number'},{label: 'Net Current', type: 'number'},{label: 'Amp Hours', type: 'number'},{label: 'Extra', type: 'number'},{label: 'Temp1', type: 'number'},{label: 'Temp2', type: 'number'},{label: 'Temp3', type: 'number'},{label: 'RSSI', type: 'number'}],\r\n"));
+    server.sendContent(F("var data = google.visualization.arrayToDataTable([[{label: 'Time', type: 'datetime'},{label: 'Battery Volatage', type: 'number'},{label: 'Net Current', type: 'number'},{label: 'Amp Hours', type: 'number'},{label: 'Extra', type: 'number'},{label: 'Temp 1', type: 'number'},{label: 'Temp 2', type: 'number'},{label: 'Temp 3', type: 'number'},{label: 'RSSI', type: 'number'}],\r\n"));
       
     snprintf(buff, BUFF_MAX, "new Date(\'%4d-%02d-%02dT%02d:%02d:%02d\')", year(esul[j].RecTime), month(esul[j].RecTime), day(esul[j].RecTime) , hour(esul[j].RecTime), minute(esul[j].RecTime), second(esul[j].RecTime));    
   //    if (( !isnan(esul[j].Voltage)) && (esul[j].RecTime>=prev_time)){
@@ -149,7 +149,7 @@ void chartFile()
     sdchar = 0 ;
     while ((dataFile.available())&&(char(sdchar) != '\n')){ // skip the firstline
       sdchar = dataFile.read();
-      Serial.print(char(sdchar));
+//      Serial.print(char(sdchar));
     }
     message = "" ;    
     while(dataFile.available()){
@@ -157,12 +157,12 @@ void chartFile()
 //      Serial.print(char(sdchar));
       message += String(char(sdchar));                       // read a byte
       if ((char(sdchar) == '\n' ) ){
-        Serial.print(message + "<");
+//        Serial.print(message + "<");
         if (message.length()>0 ){
           i = message.indexOf(',');
-          Serial.print("<");
+//          Serial.print("<");
           if ( i > 0 ){
-            Serial.print("<");
+//            Serial.print("<");
             msg2 = "new Date(\'" + message.substring(0,i) + "\')" + message.substring(i,(message.length()-2));            
             server.sendContent("[ " + msg2 + " ] ,\r\n" );
             if ( strDate.length() == 0 )
