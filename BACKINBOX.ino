@@ -4,10 +4,6 @@ void BackInTheBoxMemory(){
   sprintf(ghks.nssid,"************\0");  // put your default credentials in here if you wish
   sprintf(ghks.npassword,"********\0");  // put your default credentials in here if you wish
 
-
-  sprintf(ghks.nssid,"WLAN-PLUMMER\0");    // dougals office
-  sprintf(ghks.npassword,"cheegh5S\0");
-
   sprintf(ghks.cpassword,"\0");
   
   sprintf(ghks.NodeName,"ESU SCADA\0") ;
